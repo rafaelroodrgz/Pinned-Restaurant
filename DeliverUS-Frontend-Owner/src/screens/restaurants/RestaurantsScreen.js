@@ -2,7 +2,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { StyleSheet, FlatList, Pressable, View } from 'react-native'
 
-import { getAll, remove } from '../../api/RestaurantEndpoints'
+import { getAll, remove, togglePin } from '../../api/RestaurantEndpoints'
 import ImageCard from '../../components/ImageCard'
 import TextSemiBold from '../../components/TextSemibold'
 import TextRegular from '../../components/TextRegular'
@@ -12,10 +12,12 @@ import { AuthorizationContext } from '../../context/AuthorizationContext'
 import { showMessage } from 'react-native-flash-message'
 import DeleteModal from '../../components/DeleteModal'
 import restaurantLogo from '../../../assets/restaurantLogo.jpeg'
+import ConfirmationModal from '../../components/ConfirmationModal'
 
 export default function RestaurantsScreen ({ navigation, route }) {
   const [restaurants, setRestaurants] = useState([])
   const [restaurantToBeDeleted, setRestaurantToBeDeleted] = useState(null)
+  const [restaurantToPinned, setRestaurantToPinned] = useState(null)
   const { loggedInUser } = useContext(AuthorizationContext)
 
   useEffect(() => {
@@ -39,7 +41,17 @@ export default function RestaurantsScreen ({ navigation, route }) {
         {item.averageServiceMinutes !== null &&
           <TextSemiBold>Avg. service time: <TextSemiBold textStyle={{ color: GlobalStyles.brandPrimary }}>{item.averageServiceMinutes} min.</TextSemiBold></TextSemiBold>
         }
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }} >
         <TextSemiBold>Shipping: <TextSemiBold textStyle={{ color: GlobalStyles.brandPrimary }}>{item.shippingCosts.toFixed(2)}€</TextSemiBold></TextSemiBold>
+        <Pressable
+            onPress={() => { setRestaurantToPinned(item) }}>
+          <MaterialCommunityIcons
+          name={item.pinnedAt ? 'pin' : 'pin-outline'}
+          color={GlobalStyles.brandSecondaryTap}
+          size={24}
+        />
+        </Pressable>
+        </View>
         <View style={styles.actionButtonsContainer}>
           <Pressable
             onPress={() => navigation.navigate('EditRestaurantScreen', { id: item.id })
@@ -153,6 +165,29 @@ export default function RestaurantsScreen ({ navigation, route }) {
     }
   }
 
+  const toggleRestaurant = async (restaurant) => {
+    try {
+      await togglePin(restaurant.id)
+      await fetchRestaurants()
+      setRestaurantToPinned(null)
+      showMessage({
+        message: `Restaurant ${restaurant.name} succesfully toggled`,
+        type: 'success',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    } catch (error) {
+      console.log(error)
+      setRestaurantToPinned(null)
+      showMessage({
+        message: `Restaurant ${restaurant.name} could not be toggled.`,
+        type: 'error',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    }
+  }
+
   return (
     <>
     <FlatList
@@ -170,6 +205,11 @@ export default function RestaurantsScreen ({ navigation, route }) {
         <TextRegular>The products of this restaurant will be deleted as well</TextRegular>
         <TextRegular>If the restaurant has orders, it cannot be deleted.</TextRegular>
     </DeleteModal>
+    <ConfirmationModal
+      isVisible={restaurantToPinned !== null}
+      onCancel={() => setRestaurantToPinned(null)}
+      onConfirm={() => toggleRestaurant(restaurantToPinned)}>
+    </ConfirmationModal>
     </>
   )
 }

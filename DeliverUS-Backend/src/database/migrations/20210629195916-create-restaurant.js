@@ -22,6 +22,13 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING
       },
+      pinnedAt: {
+        type: Sequelize.DATE
+      },
+      pinned: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
       url: {
         type: Sequelize.STRING
       },

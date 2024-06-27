@@ -21,6 +21,11 @@ const loadFileRoutes = function (app) {
       handleValidation,
       RestaurantController.create)
 
+  app.route('/restaurants/:restaurantId/togglePin')
+    .patch(
+      isLoggedIn,
+      hasRole('owner'),
+      RestaurantController.togglePin)
   app.route('/restaurants/:restaurantId')
     .get(
       checkEntityExists(Restaurant, 'restaurantId'),
